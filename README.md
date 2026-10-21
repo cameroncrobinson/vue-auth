@@ -7,17 +7,12 @@ npm install
 
 ### Compiles and hot-reloads for development
 ```
-npm run serve
+npm run dev
 ```
 
 ### Compiles and minifies for production
 ```
 npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
 ```
 
 ### Customize configuration
@@ -34,16 +29,14 @@ npm run server
 
 ```sh
 # Terminal 2: Vue development server
-npm run serve
+npm run dev
 ```
 
-Restart the Vue development server after changing `vue.config.js`. Open the Vue URL shown in terminal 2 and navigate to `#/register`.
+Restart the Vue development server after changing `vite.config.js`. Open the Vue URL shown in terminal 2 and navigate to `#/register`.
 
-The form posts to `/api/register`; the development proxy forwards it to `http://127.0.0.1:3000`. A successful request returns 201, invalid fields return 400, and an existing email returns 409. Passwords must contain 8–128 characters.
+The form posts to `/api/register`; the development proxy forwards it to `http://127.0.0.1:3000`. A successful request returns 201, invalid fields return 400, and an existing email returns 409. Passwords must contain 8ï¿½128 characters.
 
 User records persist in `server/data/users.json` (ignored by Git). Passwords are stored as salted scrypt hashes, and neither passwords nor hashes are returned to the browser. This file storage is intended for local development with a single API process. Login and logout use an HttpOnly session cookie. Sessions are kept in memory and expire after one hour; restarting the API signs users out. For deployment, use a database and configure your hosting server to forward `/api` to the backend; the Vue development proxy is not included in a production build.
-
-Run backend integration checks with: npm run test:server
 
 
 ## Login flow

@@ -1,14 +1,15 @@
 <template>
 <div class="container mt-5">
-  <msg>Login Auth</msg>
+  <REAMDME />
 </div>
 </template>
 
 <script>
+import REAMDME from '../../README.md'
 export default {
   name: 'HomePage',
-  props: {
-    msg: String
+  components: {
+    REAMDME
   }
 }
 </script>
