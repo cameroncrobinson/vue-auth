@@ -17,6 +17,7 @@
       </div>
       <button type="submit" class="btn btn-primary" :disabled="submitting">{{ submitting ? 'Signing in...' : 'Login' }}</button>
     </form>
+    <a href="#" @click.prevent="handleForgotPassword">Forgot password?</a>
   </div>
 </template>
 
