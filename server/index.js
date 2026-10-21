@@ -1,5 +1,6 @@
 const express = require('express')
-const { randomBytes, randomUUID, scrypt } = require('node:crypto')
+const session = require('express-session')
+const { randomBytes, randomUUID, scrypt, timingSafeEqual } = require('node:crypto')
 const { promisify } = require('node:util')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -9,6 +10,15 @@ const hashPassword = promisify(scrypt)
 function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {}) {
   const app = express()
   app.use(express.json({ limit: '16kb' }))
+  app.use(session({
+    name: 'vue-auth.sid',
+    secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 1000 }
+  }))
+  const publicUser = ({ id, username, email }) => ({ id, username, email })
+  const readUsers = () => fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : []
 
   app.post('/api/register', async (req, res, next) => {
     try {
@@ -16,7 +26,7 @@ function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {
       if (typeof username !== 'string' || username.trim().length < 2 || username.trim().length > 50 ||
           typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
           typeof password !== 'string' || password.length < 8 || password.length > 128) {
-        return res.status(400).json({ message: 'Enter a username (2–50 characters), a valid email, and a password (8–128 characters).' })
+        return res.status(400).json({ message: 'Enter a username (2-50 characters), a valid email, and a password (8-128 characters).' })
       }
 
       const normalizedEmail = email.trim().toLowerCase()
@@ -38,9 +48,60 @@ function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {
     }
   })
 
+  app.post('/api/login', async (req, res, next) => {
+    try {
+      const { email, password } = req.body || {}
+      if (typeof email !== 'string' || email.length > 254 || typeof password !== 'string' || password.length < 8 || password.length > 128) {
+        return res.status(400).json({ message: 'Invalid request body.' })
+      }
+
+      const normalizedEmail = email.trim().toLowerCase()
+      const users = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : []
+      const user = users.find(user => user.email === normalizedEmail)
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid email or password.' })
+      }
+
+      const passwordHash = (await hashPassword(password, user.salt, 64)).toString('hex')
+      if (!timingSafeEqual(Buffer.from(passwordHash, 'hex'), Buffer.from(user.passwordHash, 'hex'))) {
+        return res.status(401).json({ message: 'Invalid email or password.' })
+      }
+      // A new session ID prevents an existing session from being reused at login.
+      req.session.regenerate(error => {
+        if (error) return next(error)
+        req.session.userId = user.id
+        req.session.save(error => {
+          if (error) return next(error)
+          return res.status(200).json({ message: 'Login successful.', user: publicUser(user) })
+        })
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/api/me', (req, res, next) => {
+    res.set('Cache-Control', 'no-store')
+    try {
+      const user = req.session.userId && readUsers().find(user => user.id === req.session.userId)
+      if (!user) return res.status(401).json({ message: 'Please log in.' })
+      return res.json({ user: publicUser(user) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/api/logout', (req, res, next) => {
+    req.session.destroy(error => {
+      if (error) return next(error)
+      res.clearCookie('vue-auth.sid', { httpOnly: true, sameSite: 'strict' })
+      return res.json({ message: 'Logged out.' })
+    })
+  })
+
   app.use((error, req, res, next) => { // eslint-disable-line no-unused-vars
     const status = error.status === 400 || error.status === 413 ? error.status : 500
-    res.status(status).json({ message: status === 500 ? 'Unable to register right now. Please try again.' : 'Invalid request body.' })
+    res.status(status).json({ message: status === 500 ? 'Unable to complete the request right now. Please try again.' : 'Invalid request body.' })
   })
   return app
 }
@@ -48,8 +109,9 @@ function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {
 if (require.main === module) {
   const port = process.env.PORT || 3000
   createApp().listen(port, '127.0.0.1', () => {
-    console.log(`Registration API listening on http://127.0.0.1:${port}`)
+    console.log(`Authentication API listening on http://127.0.0.1:${port}`)
   })
 }
 
 module.exports = { createApp }
+
