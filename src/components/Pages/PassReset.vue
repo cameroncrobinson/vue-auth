@@ -1,5 +1,5 @@
 <template>
-    <form v-else @submit.prevent="handlePasswordReset">
+    <form @submit.prevent="handlePasswordReset">
       <div class="mb-3">
         <label for="password" class="form-label">ResetPassword</label>
         <input type="password" class="form-control" id="password" v-model="password" autocomplete="current-password" placeholder="Password" required>
@@ -8,6 +8,7 @@
     </form>
 </template>
 <script>
+import axios from 'axios'
 export default {
   name: 'PassReset',
   data() {
@@ -22,7 +23,7 @@ export default {
     async handlePasswordReset() {
       if (this.submitting) return
       this.submitting = true
-      this.message = '
+      this.message = ''
       this.hasError = false
       try {
         const response = await axios.post('/api/password-reset', { email: this.email })
