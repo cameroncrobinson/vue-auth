@@ -12,7 +12,7 @@ function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {
   app.use(express.json({ limit: '16kb' }))
   app.use(session({
     name: 'vue-auth.sid',
-    secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
+    secret: import.meta.env.SESSION_SECRET || randomBytes(32).toString('hex'),
     resave: false,
     saveUninitialized: false,
     cookie: { httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 1000 }
@@ -107,7 +107,7 @@ function createApp({ dataFile = path.join(__dirname, 'data', 'users.json') } = {
 }
 
 if (require.main === module) {
-  const port = process.env.PORT || 3000
+  const port = import.meta.env.PORT || 3000
   createApp().listen(port, '127.0.0.1', () => {
     console.log(`Authentication API listening on http://127.0.0.1:${port}`)
   })

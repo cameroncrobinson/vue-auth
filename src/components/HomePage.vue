@@ -1,6 +1,6 @@
 <template>
 <div class="container mt-5">
-  <msg>Welcome to Your Vue.js App</msg>
+  <msg>Login Auth</msg>
 </div>
 </template>
 

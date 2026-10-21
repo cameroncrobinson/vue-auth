@@ -7,10 +7,10 @@
 
 <script>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import NavBar from './components/NavBar.vue'
-import HomePage from './components/HomePage.vue'
-import LoginPage from './components/Pages/LoginPage.vue'
-import RegisterUser from './components/Pages/RegisterUser.vue'
+import NavBar from './components/NavBar'
+import HomePage from './components/HomePage'
+import LoginPage from './components/Pages/LoginPage'
+import RegisterUser from './components/Pages/RegisterUser'
 
 const routes = {
   '/': HomePage,
